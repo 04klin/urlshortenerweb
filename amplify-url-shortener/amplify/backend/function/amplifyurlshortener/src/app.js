@@ -60,14 +60,26 @@ const convertUrlType = (param, type) => {
 ************************************/
 
 app.get(path, async function(req, res) {
+  const id = req.query.id;
+  if (!id) {
+    res.status(400).json({ error:"short_url id is missing!" })
+    return;
+  }
   var params = {
     TableName: tableName,
-    Select: 'ALL_ATTRIBUTES',
+    Key: {
+      id
+    }
   };
 
   try {
-    const data = await ddbDocClient.send(new ScanCommand(params));
-    res.json(data.Items);
+    const data = await ddbDocClient.send(new GetCommand(params));
+    if (data.Item && data.Item.long_url) {
+      res.status(200).json({ url: data.Item.long_url });
+      return;
+    }
+    // Fail if the items aren't there
+    res.status(401).json({ message: "Invalid URL"})
   } catch (err) {
     res.statusCode = 500;
     res.json({error: 'Could not load items: ' + err.message});
@@ -84,18 +96,36 @@ app.post(path, async function(req, res) {
     req.body['userId'] = req.apiGateway.event.requestContext.identity.cognitoIdentityId || UNAUTH;
   }
 
+  if (!res.body.long_url) {
+    res.status(400).json({ error: "long_url is missing!"})
+    return;
+  }
+
+  const shortUrlID = generateShortUrl();
+  req.body.id = shortUrlID;
+
   let putItemParams = {
     TableName: tableName,
     Item: req.body
   }
   try {
     let data = await ddbDocClient.send(new PutCommand(putItemParams));
-    res.json({ success: 'post call succeed!', url: req.url, data: data })
+    res.json({ data: data, short_url: shortUrlID })
   } catch (err) {
     res.statusCode = 500;
     res.json({ error: err, url: req.url, body: req.body });
   }
 });
+
+// generate shorturl
+function generateShortUrl() {
+  const characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+  let shortUrl = '';
+  for (let i = 0; i < 8; i++) {
+    shortUrl += characters.charAt(Math.floor(Math.random() * characters.length))
+  }
+  return shortUrl;
+}
 
 app.listen(3000, function() {
   console.log("App started")
