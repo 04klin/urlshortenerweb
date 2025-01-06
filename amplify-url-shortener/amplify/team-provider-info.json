@@ -13,7 +13,22 @@
     },
     "categories": {
       "function": {
-        "amplifyurlshortener": {}
+        "amplifyurlshortener": {
+          "deploymentBucketName": "amplify-amplifyurlshortener-dev-61394-deployment",
+          "s3Key": "amplify-builds/amplifyurlshortener-646b444e6c612b356a45-build.zip"
+        }
+      },
+      "storage": {
+        "dburlshortener": {}
+      },
+      "api": {
+        "apiurlshortener": {}
+      },
+      "hosting": {
+        "amplifyhosting": {
+          "appId": "d3l8iliptzjxmj",
+          "type": "manual"
+        }
       }
     }
   }

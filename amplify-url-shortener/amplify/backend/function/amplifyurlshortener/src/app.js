@@ -14,7 +14,7 @@ const awsServerlessExpressMiddleware = require('aws-serverless-express/middlewar
 const bodyParser = require('body-parser')
 const express = require('express')
 
-const ddbClient = new DynamoDBClient({ region: process.env.TABLE_REGION });
+const ddbClient = new DynamoDBClient({ region: process.env.TABLE_REGION || 'us-east-1'});
 const ddbDocClient = DynamoDBDocumentClient.from(ddbClient);
 
 let tableName = "dburlshortener";
@@ -45,24 +45,15 @@ app.use(function(req, res, next) {
   next()
 });
 
-// convert url string param to expected Type
-const convertUrlType = (param, type) => {
-  switch(type) {
-    case "N":
-      return Number.parseInt(param);
-    default:
-      return param;
-  }
-}
-
 /************************************
 * HTTP Get method to list objects *
 ************************************/
 
 app.get(path, async function(req, res) {
+
   const id = req.query.id;
   if (!id) {
-    res.status(400).json({ error:"short_url id is missing!" })
+    res.status(400).json({ error: "short_url id is missing!" })
     return;
   }
   var params = {
@@ -96,8 +87,8 @@ app.post(path, async function(req, res) {
     req.body['userId'] = req.apiGateway.event.requestContext.identity.cognitoIdentityId || UNAUTH;
   }
 
-  if (!res.body.long_url) {
-    res.status(400).json({ error: "long_url is missing!"})
+  if (!req.body.long_url) {
+    req.status(400).json({ error: "long_url is missing!"})
     return;
   }
 
